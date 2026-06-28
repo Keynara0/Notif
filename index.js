@@ -16,7 +16,7 @@ const rest = new REST({ version: "10" }).setToken(BOT_TOKEN);
 
 // Parse webhook URL → { id, token }
 function parseWebhook(url) {
-    const match = url.match(/discord\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
+    const match = url.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
     if (!match) return null;
     return { id: match[1], token: match[2] };
 }
