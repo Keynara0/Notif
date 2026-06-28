@@ -22,14 +22,12 @@ function parseWebhook(url) {
 function buildPayload(data) {
     const { title, items, footer } = data;
 
-    // Top-level components tanpa Container
-    // Container (type 17) nambahin border/accent di kiri — kita skip biar flat seperti Chloe
-    const components = [];
+    const containerChildren = [];
 
     // Header
     if (title) {
-        components.push({ type: 10, content: `**${title}**` });
-        components.push({ type: 14, spacing: 1, divider: true });
+        containerChildren.push({ type: 10, content: `**${title}**` });
+        containerChildren.push({ type: 14, divider: true, spacing: 1 });
     }
 
     for (let i = 0; i < items.length; i++) {
@@ -40,11 +38,11 @@ function buildPayload(data) {
         if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
         if (item.type)               lines.push(`**Type :** ${item.type}`);
         if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
-        if (item.price)              lines.push(`**Price :** ¢${item.price}`);
         if (item.extra)              lines.push(`**Extra :** ${item.extra}`);
+        if (item.price)              lines.push(`**Price :** ¢${item.price}`);
 
         if (item.imageUrl) {
-            components.push({
+            containerChildren.push({
                 type: 9,
                 components: [{ type: 10, content: lines.join("\n") }],
                 accessory: {
@@ -53,20 +51,28 @@ function buildPayload(data) {
                 }
             });
         } else {
-            components.push({ type: 10, content: lines.join("\n") });
+            containerChildren.push({ type: 10, content: lines.join("\n") });
         }
 
         if (i < items.length - 1) {
-            components.push({ type: 14, spacing: 1, divider: true });
+            containerChildren.push({ type: 14, divider: true, spacing: 1 });
         }
     }
 
     if (footer) {
-        components.push({ type: 14, spacing: 1, divider: false });
-        components.push({ type: 10, content: `-# ${footer}` });
+        containerChildren.push({ type: 14, divider: false, spacing: 1 });
+        containerChildren.push({ type: 10, content: `-# ${footer}` });
     }
 
-    return { flags: 32768, components };
+    return {
+        flags: 1 << 15, // 32768 = IS_COMPONENTS_V2
+        components: [
+            {
+                type: 17, // Container tanpa accent_color = box flat gelap seperti Chloe
+                components: containerChildren
+            }
+        ]
+    };
 }
 
 app.get("/", (req, res) => res.json({ status: "JinHub Notif OK" }));
@@ -76,7 +82,7 @@ app.post("/send", async (req, res) => {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { webhook_url, title, items, footer, color } = req.body;
+    const { webhook_url, title, items, footer } = req.body;
 
     if (!webhook_url) return res.status(400).json({ error: "webhook_url required" });
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -87,7 +93,7 @@ app.post("/send", async (req, res) => {
     if (!wh) return res.status(400).json({ error: "Invalid webhook URL" });
 
     try {
-        const payload = buildPayload({ title, items, footer, color });
+        const payload = buildPayload({ title, items, footer });
 
         await rest.post(
             `/webhooks/${wh.id}/${wh.token}?with_components=true`,
