@@ -16,7 +16,7 @@ const rest = new REST({ version: "10" }).setToken(BOT_TOKEN);
 
 // Parse webhook URL → { id, token }
 function parseWebhook(url) {
-    const match = url.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
+    const match = url.match(/discord\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
     if (!match) return null;
     return { id: match[1], token: match[2] };
 }
@@ -52,21 +52,25 @@ function buildPayload(data) {
         if (item.price)   lines.push(`**Price :** ¢${item.price}`);
         if (item.extra)   lines.push(`**Extra :** ${item.extra}`);
 
-        const section = {
-            type: 9,
-            components: [
-                { type: 10, content: lines.join("\n") }
-            ]
-        };
-
         if (item.imageUrl) {
-            section.accessory = {
-                type: 11,
-                media: { url: item.imageUrl }
-            };
+            // Pakai Section (type 9) hanya kalau ada imageUrl
+            containerChildren.push({
+                type: 9,
+                components: [
+                    { type: 10, content: lines.join("\n") }
+                ],
+                accessory: {
+                    type: 11,
+                    media: { url: item.imageUrl }
+                }
+            });
+        } else {
+            // Tanpa image, pakai TextDisplay biasa
+            containerChildren.push({
+                type: 10,
+                content: lines.join("\n")
+            });
         }
-
-        containerChildren.push(section);
 
         // Separator between items (not after last)
         if (i < items.length - 1) {
@@ -128,10 +132,7 @@ app.post("/send", async (req, res) => {
         res.json({ success: true });
     } catch (e) {
         console.error("[Error]", e?.rawError || e?.message || e);
-        res.status(500).json({ 
-            error: e?.rawError?.message || e?.message || "Unknown error",
-            details: e?.rawError // tambah ini
-        });
+        res.status(500).json({ error: e?.rawError?.message || e?.message || "Unknown error" });
     }
 });
 
