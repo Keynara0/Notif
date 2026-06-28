@@ -7,7 +7,7 @@ app.use(express.json());
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_KEY   = process.env.API_KEY;
-const PORT      = process.env.PORT || 8080;
+const PORT      = process.env.PORT || 3000;
 
 if (!BOT_TOKEN) { console.error("BOT_TOKEN missing"); process.exit(1); }
 if (!API_KEY)   { console.error("API_KEY missing");   process.exit(1); }
@@ -128,7 +128,10 @@ app.post("/send", async (req, res) => {
         res.json({ success: true });
     } catch (e) {
         console.error("[Error]", e?.rawError || e?.message || e);
-        res.status(500).json({ error: e?.rawError?.message || e?.message || "Unknown error" });
+        res.status(500).json({ 
+            error: e?.rawError?.message || e?.message || "Unknown error",
+            details: e?.rawError // tambah ini
+        });
     }
 });
 
