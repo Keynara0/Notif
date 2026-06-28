@@ -1,0 +1,17 @@
+{
+  "name": "jinhub-notif",
+  "version": "1.0.0",
+  "description": "JinHub Discord Components V2 relay server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@discordjs/rest": "^2.3.0",
+    "discord-api-types": "^0.37.97",
+    "express": "^4.18.2"
+  }
+}
