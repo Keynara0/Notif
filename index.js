@@ -1,6 +1,5 @@
 const express = require("express");
 const { REST } = require("@discordjs/rest");
-const { Routes } = require("discord-api-types/v10");
 
 const app = express();
 app.use(express.json());
@@ -14,97 +13,65 @@ if (!API_KEY)   { console.error("API_KEY missing");   process.exit(1); }
 
 const rest = new REST({ version: "10" }).setToken(BOT_TOKEN);
 
-// Parse webhook URL → { id, token }
 function parseWebhook(url) {
     const match = url.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
     if (!match) return null;
     return { id: match[1], token: match[2] };
 }
 
-// Build Components V2 payload
 function buildPayload(data) {
     const { title, items, footer } = data;
 
+    // Top-level components tanpa Container
+    // Container (type 17) nambahin border/accent di kiri — kita skip biar flat seperti Chloe
     const components = [];
-
-    // Container start
-    const containerChildren = [];
 
     // Header
     if (title) {
-        containerChildren.push({
-            type: 10,
-            content: `**${title}**`
-        });
-        containerChildren.push({ type: 14, spacing: 1, divider: true });
+        components.push({ type: 10, content: `**${title}**` });
+        components.push({ type: 14, spacing: 1, divider: true });
     }
 
-    // Sections per item
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
-        // Build text lines
         const lines = [];
-        if (item.name)    lines.push(`**Name :** ${item.name}`);
+        if (item.name)               lines.push(`**Name :** ${item.name}`);
         if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
-        if (item.type)    lines.push(`**Type :** ${item.type}`);
-        if (item.rarity)  lines.push(`**Rarity :** ${item.rarity}`);
-        if (item.price)   lines.push(`**Price :** ¢${item.price}`);
-        if (item.extra)   lines.push(`**Extra :** ${item.extra}`);
+        if (item.type)               lines.push(`**Type :** ${item.type}`);
+        if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
+        if (item.price)              lines.push(`**Price :** ¢${item.price}`);
+        if (item.extra)              lines.push(`**Extra :** ${item.extra}`);
 
         if (item.imageUrl) {
-            // Pakai Section (type 9) hanya kalau ada imageUrl
-            containerChildren.push({
+            components.push({
                 type: 9,
-                components: [
-                    { type: 10, content: lines.join("\n") }
-                ],
+                components: [{ type: 10, content: lines.join("\n") }],
                 accessory: {
                     type: 11,
                     media: { url: item.imageUrl }
                 }
             });
         } else {
-            // Tanpa image, pakai TextDisplay biasa
-            containerChildren.push({
-                type: 10,
-                content: lines.join("\n")
-            });
+            components.push({ type: 10, content: lines.join("\n") });
         }
 
-        // Separator between items (not after last)
         if (i < items.length - 1) {
-            containerChildren.push({ type: 14, spacing: 1, divider: true });
+            components.push({ type: 14, spacing: 1, divider: true });
         }
     }
 
-    // Footer
     if (footer) {
-        containerChildren.push({ type: 14, spacing: 1, divider: false });
-        containerChildren.push({
-            type: 10,
-            content: `-# ${footer}`
-        });
+        components.push({ type: 14, spacing: 1, divider: false });
+        components.push({ type: 10, content: `-# ${footer}` });
     }
 
-    components.push({
-        type: 17,
-        accent_color: data.color || 0x2b5ce6,
-        components: containerChildren
-    });
-
-    return {
-        flags: 32768,
-        components
-    };
+    return { flags: 32768, components };
 }
 
-// Health check
 app.get("/", (req, res) => res.json({ status: "JinHub Notif OK" }));
 
-// Main endpoint
 app.post("/send", async (req, res) => {
-    // Auth
     if (req.headers["x-api-key"] !== API_KEY) {
         return res.status(401).json({ error: "Unauthorized" });
     }
@@ -122,8 +89,6 @@ app.post("/send", async (req, res) => {
     try {
         const payload = buildPayload({ title, items, footer, color });
 
-        // Kirim via bot REST ke webhook URL user dengan ?with_components=true
-        // Bot REST otomatis set Authorization header → jadi application-owned request
         await rest.post(
             `/webhooks/${wh.id}/${wh.token}?with_components=true`,
             { body: payload }
@@ -131,8 +96,11 @@ app.post("/send", async (req, res) => {
 
         res.json({ success: true });
     } catch (e) {
-        console.error("[Error]", e?.rawError || e?.message || e);
-        res.status(500).json({ error: e?.rawError?.message || e?.message || "Unknown error" });
+        console.error("[Error]", JSON.stringify(e?.rawError, null, 2) || e?.message);
+        res.status(500).json({
+            error: e?.rawError?.message || e?.message || "Unknown error",
+            details: e?.rawError
+        });
     }
 });
 
