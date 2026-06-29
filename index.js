@@ -23,23 +23,13 @@ function buildPayload(data) {
     const { title, items, footer } = data;
     const containerChildren = [];
 
-    // Header
     if (title) {
         containerChildren.push({ type: 10, content: `**${title}**` });
         containerChildren.push({ type: 14, divider: true, spacing: 1 });
     }
 
-    // Kumpulin semua image buat MediaGallery
-    const galleryItems = items
-        .filter(item => item.imageUrl)
-        .map(item => ({
-            media: { url: item.imageUrl },
-            description: item.name || ""
-        }));
-
-    // Text block per item (tanpa image, karena image di gallery)
-    const textLines = [];
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
         const lines = [];
         if (item.name)               lines.push(`**Name :** ${item.name}`);
         if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
@@ -47,23 +37,25 @@ function buildPayload(data) {
         if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
         if (item.extra)              lines.push(`**Extra :** ${item.extra}`);
         if (item.price)              lines.push(`**Price :** ${item.price}`);
-        textLines.push(lines.join("\n"));
+
+        if (item.imageUrl) {
+            containerChildren.push({
+                type: 9,
+                components: [{ type: 10, content: lines.join("\n") }],
+                accessory: {
+                    type: 11,
+                    media: { url: item.imageUrl }
+                }
+            });
+        } else {
+            containerChildren.push({ type: 10, content: lines.join("\n") });
+        }
+
+        if (i < items.length - 1) {
+            containerChildren.push({ type: 14, divider: true, spacing: 1 });
+        }
     }
 
-    containerChildren.push({
-        type: 10,
-        content: textLines.join("\n\n")
-    });
-
-    // MediaGallery semua image sekaligus (otomatis grid horizontal)
-    if (galleryItems.length > 0) {
-        containerChildren.push({
-            type: 12,
-            items: galleryItems
-        });
-    }
-
-    // Footer
     if (footer) {
         containerChildren.push({ type: 14, divider: false, spacing: 1 });
         containerChildren.push({ type: 10, content: `-# ${footer}` });
@@ -71,12 +63,7 @@ function buildPayload(data) {
 
     return {
         flags: 1 << 15,
-        components: [
-            {
-                type: 17,
-                components: containerChildren
-            }
-        ]
+        components: [{ type: 17, components: containerChildren }]
     };
 }
 
