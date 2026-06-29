@@ -1,17 +1,14 @@
 const express = require("express");
-const { REST } = require("@discordjs/rest");
-
 const app = express();
 app.use(express.json());
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_KEY   = process.env.API_KEY;
-const PORT      = process.env.PORT || 3000;
+const API_KEY = process.env.API_KEY;
+const PORT    = process.env.PORT || 3000;
 
-if (!BOT_TOKEN) { console.error("BOT_TOKEN missing"); process.exit(1); }
-if (!API_KEY)   { console.error("API_KEY missing");   process.exit(1); }
+if (!API_KEY) { console.error("API_KEY missing"); process.exit(1); }
 
-const rest = new REST({ version: "10" }).setToken(BOT_TOKEN);
+const DEFAULT_USERNAME   = "JinHub Notification";
+const DEFAULT_AVATAR_URL = "https://i.imgur.com/your-jinhub-logo.png"; // ganti dengan URL logo JinHub
 
 function parseWebhook(url) {
     const match = url.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
@@ -20,7 +17,7 @@ function parseWebhook(url) {
 }
 
 function buildPayload(data) {
-    const { title, items, footer } = data;
+    const { title, items, footer, username, avatar_url } = data;
     const containerChildren = [];
 
     if (title) {
@@ -62,6 +59,8 @@ function buildPayload(data) {
     }
 
     return {
+        username:   username   || DEFAULT_USERNAME,
+        avatar_url: avatar_url || DEFAULT_AVATAR_URL,
         flags: 1 << 15,
         components: [{ type: 17, components: containerChildren }]
     };
@@ -74,7 +73,7 @@ app.post("/send", async (req, res) => {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { webhook_url, title, items, footer } = req.body;
+    const { webhook_url, title, items, footer, username, avatar_url } = req.body;
 
     if (!webhook_url) return res.status(400).json({ error: "webhook_url required" });
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -85,20 +84,30 @@ app.post("/send", async (req, res) => {
     if (!wh) return res.status(400).json({ error: "Invalid webhook URL" });
 
     try {
-        const payload = buildPayload({ title, items, footer });
+        const payload = buildPayload({ title, items, footer, username, avatar_url });
 
-        await rest.post(
-            `/webhooks/${wh.id}/${wh.token}?with_components=true`,
-            { body: payload }
+        const response = await fetch(
+            `https://discord.com/api/webhooks/${wh.id}/${wh.token}?with_components=true`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }
         );
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            console.error("[Discord Error]", JSON.stringify(err, null, 2));
+            return res.status(500).json({
+                error: err.message || "Discord API error",
+                details: err
+            });
+        }
 
         res.json({ success: true });
     } catch (e) {
-        console.error("[Error]", JSON.stringify(e?.rawError, null, 2) || e?.message);
-        res.status(500).json({
-            error: e?.rawError?.message || e?.message || "Unknown error",
-            details: e?.rawError
-        });
+        console.error("[Error]", e?.message);
+        res.status(500).json({ error: e?.message || "Unknown error" });
     }
 });
 
