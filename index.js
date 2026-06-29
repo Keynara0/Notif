@@ -29,32 +29,34 @@ function buildPayload(data) {
     }
 
     for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const lines = [];
-        if (item.name)               lines.push(`**Name :** ${item.name}`);
-        if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
-        if (item.type)               lines.push(`**Type :** ${item.type}`);
-        if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
-        if (item.extra)              lines.push(`**Extra :** ${item.extra}`);
-        if (item.price)              lines.push(`**Price :** ${item.price}`);
+    const item = items[i];
 
-        if (item.imageUrl) {
-            containerChildren.push({
-                type: 9,
-                components: [{ type: 10, content: lines.join("\n") }],
-                accessory: {
-                    type: 11,
-                    media: { url: item.imageUrl }
-                }
-            });
-        } else {
-            containerChildren.push({ type: 10, content: lines.join("\n") });
-        }
+    const textComponents = [];
 
-        if (i < items.length - 1) {
-            containerChildren.push({ type: 14, divider: true, spacing: 1 });
-        }
+    if (item.name) textComponents.push({ type: 10, content: `**Name :**\n${item.name}` });
+    if (item.stock !== undefined) textComponents.push({ type: 10, content: `**Stock :**\n${item.stock}` });
+    if (item.type) textComponents.push({ type: 10, content: `**Type :**\n${item.type}` });
+    if (item.rarity) textComponents.push({ type: 10, content: `**Rarity :**\n${item.rarity}` });
+    if (item.extra) textComponents.push({ type: 10, content: `**Extra :**\n${item.extra}` });
+    if (item.price) textComponents.push({ type: 10, content: `**Price :**\n${item.price}` });
+
+    if (item.imageUrl) {
+        containerChildren.push({
+            type: 9,
+            components: textComponents,
+            accessory: {
+                type: 11,
+                media: { url: item.imageUrl }
+            }
+        });
+    } else {
+        for (const t of textComponents) containerChildren.push(t);
     }
+
+    if (i < items.length - 1) {
+        containerChildren.push({ type: 14, divider: true, spacing: 1 });
+    }
+}
 
     if (footer) {
         containerChildren.push({ type: 14, divider: false, spacing: 1 });
