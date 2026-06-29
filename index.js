@@ -33,9 +33,9 @@ function buildPayload(data) {
         const lines = [];
         if (item.name)               lines.push(`**Name :** ${item.name}`);
         if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
-        if (item.type)               lines.push(`**Type :** ${item.type}`);
+        if (item.type)               lines.push(`**info :** ${item.info}`);
         if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
-        if (item.extra)              lines.push(`**Extra :** ${item.extra}`);
+        if (item.extra)              lines.push(`**time :** ${item.time}`);
         if (item.price)              lines.push(`**Price :** ${item.price}`);
 
         if (item.imageUrl) {
