@@ -80,7 +80,7 @@ app.post("/send", async (req, res) => {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { webhook_url, title, items, footer, username, avatar_url } = req.body;
+    const { webhook_url, title, items, footer, username, avatar_url, ping } = req.body;
 
     if (!webhook_url) return res.status(400).json({ error: "webhook_url required" });
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -92,6 +92,11 @@ app.post("/send", async (req, res) => {
 
     try {
         const payload = buildPayload({ title, items, footer, username, avatar_url });
+
+        if (ping) {
+            payload.content = "@everyone";
+            payload.allowed_mentions = { parse: ["everyone"] };
+        }
 
         const response = await fetch(
             `https://discord.com/api/webhooks/${wh.id}/${wh.token}?with_components=true`,
