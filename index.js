@@ -8,7 +8,7 @@ const PORT    = process.env.PORT || 3000;
 if (!API_KEY) { console.error("API_KEY missing"); process.exit(1); }
 
 const DEFAULT_USERNAME   = "JinHub Notification";
-const DEFAULT_AVATAR_URL = "https://i.imgur.com/your-jinhub-logo.png";
+const DEFAULT_AVATAR_URL = "https://i.ibb.co/3YvVFXnp/LOGO-JINHUB.png";
 
 function parseWebhook(url) {
     const match = url.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
