@@ -17,8 +17,12 @@ function parseWebhook(url) {
 }
 
 function buildPayload(data) {
-    const { title, items, footer, username, avatar_url } = data;
+    const { title, items, footer, username, avatar_url, ping } = data;
     const containerChildren = [];
+
+    if (ping) {
+        containerChildren.push({ type: 10, content: "@everyone" });
+    }
 
     if (title) {
         containerChildren.push({ type: 10, content: `**${title}**` });
@@ -29,11 +33,9 @@ function buildPayload(data) {
         const item = items[i];
         const lines = [];
 
-        // Kalau ada `lines` array, pakai itu langsung (raw text)
         if (Array.isArray(item.lines)) {
             for (const line of item.lines) lines.push(line);
         } else {
-            // Logic lama tetap jalan
             if (item.name)               lines.push(`**Name :** ${item.name}`);
             if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
             if (item.type)               lines.push(`**Info :** ${item.type}`);
@@ -69,6 +71,7 @@ function buildPayload(data) {
         username:   username   || DEFAULT_USERNAME,
         avatar_url: avatar_url || DEFAULT_AVATAR_URL,
         flags: 1 << 15,
+        allowed_mentions: ping ? { parse: ["everyone"] } : undefined,
         components: [{ type: 17, components: containerChildren }]
     };
 }
@@ -91,12 +94,7 @@ app.post("/send", async (req, res) => {
     if (!wh) return res.status(400).json({ error: "Invalid webhook URL" });
 
     try {
-        const payload = buildPayload({ title, items, footer, username, avatar_url });
-
-        if (ping) {
-            payload.content = "@everyone";
-            payload.allowed_mentions = { parse: ["everyone"] };
-        }
+        const payload = buildPayload({ title, items, footer, username, avatar_url, ping });
 
         const response = await fetch(
             `https://discord.com/api/webhooks/${wh.id}/${wh.token}?with_components=true`,
