@@ -8,7 +8,7 @@ const PORT    = process.env.PORT || 3000;
 if (!API_KEY) { console.error("API_KEY missing"); process.exit(1); }
 
 const DEFAULT_USERNAME   = "JinHub Notification";
-const DEFAULT_AVATAR_URL = "https://i.imgur.com/your-jinhub-logo.png"; // ganti dengan URL logo JinHub
+const DEFAULT_AVATAR_URL = "https://i.imgur.com/your-jinhub-logo.png";
 
 function parseWebhook(url) {
     const match = url.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/([^/?]+)/);
@@ -28,12 +28,19 @@ function buildPayload(data) {
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const lines = [];
-        if (item.name)               lines.push(`**Name :** ${item.name}`);
-        if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
-        if (item.type)               lines.push(`**Info :** ${item.type}`);
-        if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
-        if (item.extra)              lines.push(`**Time :** ${item.extra}`);
-        if (item.price)              lines.push(`**Price :** ${item.price}`);
+
+        // Kalau ada `lines` array, pakai itu langsung (raw text)
+        if (Array.isArray(item.lines)) {
+            for (const line of item.lines) lines.push(line);
+        } else {
+            // Logic lama tetap jalan
+            if (item.name)               lines.push(`**Name :** ${item.name}`);
+            if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
+            if (item.type)               lines.push(`**Info :** ${item.type}`);
+            if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
+            if (item.extra)              lines.push(`**Time :** ${item.extra}`);
+            if (item.price)              lines.push(`**Price :** ${item.price}`);
+        }
 
         if (item.imageUrl) {
             containerChildren.push({
