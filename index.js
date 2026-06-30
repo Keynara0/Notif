@@ -28,12 +28,32 @@ function buildPayload(data) {
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const lines = [];
-        if (item.name)               lines.push(`**Name :** ${item.name}`);
-        if (item.stock !== undefined) lines.push(`**Stock :** ${item.stock}`);
-        if (item.type)               lines.push(`**Info :** ${item.type}`);
-        if (item.rarity)             lines.push(`**Rarity :** ${item.rarity}`);
-        if (item.extra)              lines.push(`**Time :** ${item.extra}`);
-        if (item.price)              lines.push(`**Price :** ${item.price}`);
+        const labels = item.labels || {
+    name: "Name",
+    stock: "Stock",
+    type: "Info",
+    rarity: "Rarity",
+    extra: "Time",
+    price: "Price"
+};
+
+if (item.name)
+    lines.push(`**${labels.name} :** ${item.name}`);
+
+if (item.stock !== undefined)
+    lines.push(`**${labels.stock} :** ${item.stock}`);
+
+if (item.type)
+    lines.push(`**${labels.type} :** ${item.type}`);
+
+if (item.rarity)
+    lines.push(`**${labels.rarity} :** ${item.rarity}`);
+
+if (item.extra)
+    lines.push(`**${labels.extra} :** ${item.extra}`);
+
+if (item.price)
+    lines.push(`**${labels.price} :** ${item.price}`);
 
         if (item.imageUrl) {
             containerChildren.push({
